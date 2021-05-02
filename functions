@@ -1137,9 +1137,6 @@ setup_apt_sources () {
 
 setup_etc () {
 	mkdir -p "$TARGET/etc"
-
-	conditional_cp /etc/resolv.conf "$TARGET"
-	conditional_cp /etc/hostname "$TARGET"
 }
 
 UMOUNT_DIRS=
