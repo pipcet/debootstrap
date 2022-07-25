@@ -538,6 +538,10 @@ extract_release_components () {
 	local reldest="$1"; shift
 	TMPCOMPONENTS="$(sed -n 's/Components: *//p' "$reldest")"
 	for c in $TMPCOMPONENTS ; do
+		case " $COMPONENTS " in
+			*" $c "*) continue ;;
+		esac;
+
 		eval "
 		case \"\$c\" in
 		    $USE_COMPONENTS)
@@ -1127,6 +1131,7 @@ setup_apt_sources () {
 	for m in "$@"; do
 		for s in $SUITE $EXTRA_SUITES; do
 			local cs c path pkgdest
+			cs=""
 			for c in ${COMPONENTS:-$USE_COMPONENTS}; do
 				path="dists/$s/$c/binary-$ARCH/Packages"
 				pkgdest="$TARGET/$($DLDEST pkg "$s" "$c" "$ARCH" "$m" "$path")"
@@ -1171,6 +1176,7 @@ setup_proc () {
 	case "$HOST_OS" in
 	    *freebsd*)
 		umount_on_exit /dev
+		umount_on_exit /dev/fd
 		umount_on_exit /proc
 		umount "$TARGET/proc" 2>/dev/null || true
 		if [ "$HOST_OS" = kfreebsd ]; then
@@ -1261,7 +1267,8 @@ setup_dynamic_devices () {
 	    kfreebsd*)
 		in_target mount -t devfs devfs /dev ;;
 	    freebsd)
-		mount -t devfs devfs "$TARGET/dev" ;;
+		mount -t devfs devfs "$TARGET/dev"
+		mount -t fdescfs -o linrdlnk fdescfs "$TARGET/dev/fd" ;;
 	    hurd*)
 	        # Use the setup-translators of the hurd package
 	        in_target /usr/lib/hurd/setup-translators -k ;;
@@ -1372,6 +1379,8 @@ setup_merged_usr() {
 			link_dir="lib32 lib64" ;;
 	    mips64*|mipsn32*)
 			link_dir="lib32 lib64 libo32" ;;
+	    loongarch64*)
+			link_dir="lib32 lib64" ;;
 	    powerpc)	link_dir="lib64" ;;
 	    ppc64)	link_dir="lib32 lib64" ;;
 	    ppc64el)	link_dir="lib64" ;;
